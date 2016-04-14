@@ -62,10 +62,26 @@ class MatchResource:
                         [today, doc, doc, doc, doc, today])
 
 
+class MismatchDataResource:
+    """
+    create table failures (
+      id BIGSERIAL PRIMARY KEY,
+      data json
+    );
+    """
+    def on_post(self, req, resp):
+        doc = req.context['doc']
+        with pool.getconn() as conn:
+            cur = conn.cursor()
+            cur.execute("INSERT INTO failures (data) VALUES (%s)", [doc])
+
+
 app = falcon.API(middleware=[
     JSONTranslator(),
 ])
 
 match = MatchResource()
+mismatch_data = MismatchDataResource()
 
 app.add_route('/match/', match)
+app.add_route('/mismatch-data/', mismatch_data)
