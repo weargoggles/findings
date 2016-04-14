@@ -46,13 +46,13 @@ class MatchResource:
         today = datetime.date.today()
         with pool.getconn() as conn:
             cur = conn.cursor()
-            cur.execute('WITH vars as (select ? as match)'
-                         'INSERT INTO matches (date, success, failure) '
-                         'VALUES (?, vars.match = true, vars.match = false) '
-                         'ON CONFLICT (date) DO UPDATE SET '
-                         'success = success + (vars.match = true)::INTEGER, '
-                         'failure = failure + (vars.match = false)::INTEGER',
-                         [today, doc, doc, doc, doc])
+            cur.execute("WITH vars AS (SELECT %s AS MATCH)"
+                        "INSERT INTO matches (date, success, failure) "
+                        "VALUES (%s, vars.match = TRUE, vars.match = FALSE) "
+                        "ON CONFLICT (date) DO UPDATE SET "
+                        "success = success + (vars.match = TRUE)::INTEGER, "
+                        "failure = failure + (vars.match = FALSE)::INTEGER",
+                        [doc, today])
 
 
 app = falcon.API(middleware=[
