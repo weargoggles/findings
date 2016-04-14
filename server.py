@@ -56,9 +56,10 @@ class MatchResource:
             cur.execute("INSERT INTO matches (date, success, failure) "
                         "VALUES (%s, (%s = TRUE)::INTEGER, (%s = FALSE)::INTEGER) "
                         "ON CONFLICT (date) DO UPDATE SET "
-                        "success = success + (%s = TRUE)::INTEGER, "
-                        "failure = failure + (%s = FALSE)::INTEGER",
-                        [today, doc, doc, doc, doc])
+                        "success = matches.success + (%s = TRUE)::INTEGER, "
+                        "failure = matches.failure + (%s = FALSE)::INTEGER "
+                        "WHERE matches.date = %s",
+                        [today, doc, doc, doc, doc, date])
 
 
 app = falcon.API(middleware=[
