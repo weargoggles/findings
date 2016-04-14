@@ -41,18 +41,24 @@ class JSONTranslator(object):
         resp.data = json.dumps(req.context['result'])
 
 class MatchResource:
+    """
+    create table matches (
+      date DATE PRIMARY KEY,
+      success BIGINT DEFAULT 0,
+      failure BIGINT DEFAULT 0
+    );
+    """
     def on_post(self, req, resp):
         doc = req.context['doc']
         today = datetime.date.today()
         with pool.getconn() as conn:
             cur = conn.cursor()
-            cur.execute("WITH vars AS (SELECT %s AS MATCH)"
-                        "INSERT INTO matches (date, success, failure) "
-                        "VALUES (%s, vars.match = TRUE, vars.match = FALSE) "
+            cur.execute("INSERT INTO matches (date, success, failure) "
+                        "VALUES (%s, %s = TRUE, %s = FALSE) "
                         "ON CONFLICT (date) DO UPDATE SET "
-                        "success = success + (vars.match = TRUE)::INTEGER, "
-                        "failure = failure + (vars.match = FALSE)::INTEGER",
-                        [doc, today])
+                        "success = success + (%s = TRUE)::INTEGER, "
+                        "failure = failure + (%s = FALSE)::INTEGER",
+                        [today, doc, doc, doc, doc])
 
 
 app = falcon.API(middleware=[
