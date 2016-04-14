@@ -1,8 +1,12 @@
 import datetime
 import falcon
 import json
+
+import os
 import psycopg2cffi.pool
 import dj_database_url
+from psycopg2cffi._impl.connection import Connection
+from wsgi_basic_auth import BasicAuth
 
 database_config = dj_database_url.config()
 
@@ -51,7 +55,8 @@ class MatchResource:
     def on_post(self, req, resp):
         doc = req.context['doc']
         today = datetime.date.today()
-        with pool.getconn() as conn:
+        connection = pool.getconn()
+        with connection as conn:
             cur = conn.cursor()
             cur.execute("INSERT INTO matches (date, success, failure) "
                         "VALUES (%s, (%s = TRUE)::INTEGER, (%s = FALSE)::INTEGER) "
@@ -60,6 +65,7 @@ class MatchResource:
                         "failure = matches.failure + (%s = FALSE)::INTEGER "
                         "WHERE matches.date = %s",
                         [today, doc, doc, doc, doc, today])
+        pool.putconn(connection)
 
 
 class MismatchDataResource:
@@ -85,3 +91,6 @@ mismatch_data = MismatchDataResource()
 
 app.add_route('/match/', match)
 app.add_route('/mismatch-data/', mismatch_data)
+
+if os.environ('WSGI_AUTH_CREDENTIALS'):
+    app = BasicAuth(app)

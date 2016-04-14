@@ -7,3 +7,5 @@ psycopg2cffi==2.7.4
 python-mimeparse==1.5.1
 readline==6.2.4.1
 six==1.10.0
+WebOb==1.6.0
+wsgi-basic-auth==0.0.3
