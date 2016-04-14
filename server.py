@@ -78,9 +78,12 @@ class MismatchDataResource:
     """
     def on_post(self, req, resp):
         doc = req.context['doc']
-        with pool.getconn() as conn:
+        connection = pool.getconn()
+        with connection as conn:
             cur = conn.cursor()
             cur.execute("INSERT INTO failures (data) VALUES (%s)", [Json(doc)])
+
+        pool.putconn(connection)
 
 
 app = falcon.API(middleware=[
