@@ -27,9 +27,14 @@ class DateAndDateTimeSupportingJSONEncoder(JSONEncoder):
 
         return super(DateAndDateTimeSupportingJSONEncoder, self).default(o)
 
+
+_default_encoder_class = DateAndDateTimeSupportingJSONEncoder
+_default_encoder = _default_encoder_class()
+
+
 def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
-         allow_nan=True, cls=None, indent=None, separators=None,
-         encoding='utf-8', default=None, sort_keys=False, **kw):
+                allow_nan=True, cls=None, indent=None, separators=None,
+                encoding='utf-8', default=None, sort_keys=False, **kw):
     """Serialize ``obj`` and yield chunks.
 
     """
@@ -38,22 +43,20 @@ def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
             check_circular and allow_nan and
                 cls is None and indent is None and separators is None and
                 encoding == 'utf-8' and default is None and not sort_keys and not kw):
-        iterable = DateAndDateTimeSupportingJSONEncoder().iterencode(obj)
+        iterable = _default_encoder.iterencode(obj)
     else:
         if cls is None:
-            cls = DateAndDateTimeSupportingJSONEncoder
+            cls = _default_encoder_class
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
                        check_circular=check_circular, allow_nan=allow_nan, indent=indent,
                        separators=separators, encoding=encoding,
                        default=default, sort_keys=sort_keys, **kw).iterencode(obj)
-    # could accelerate with writelines in some versions of Python, at
-    # a debuggability cost
+
     for chunk in iterable:
         yield chunk
 
 
 class JSONTranslator(object):
-
     def process_request(self, req, resp):
         # req.stream corresponds to the WSGI wsgi.input environ variable,
         # and allows you to read bytes from the request body.
@@ -78,8 +81,8 @@ class JSONTranslator(object):
             return
         resp.stream = json_stream(req.context['result'])
 
-class PostgresConnectionPool(object):
 
+class PostgresConnectionPool(object):
     def process_request(self, req, resp):
         req.context['connection'] = pool.getconn()
 
@@ -89,6 +92,7 @@ class PostgresConnectionPool(object):
 
         pool.putconn(req.context['connection'])
 
+
 class MatchResource:
     """
     create table matches (
@@ -97,6 +101,7 @@ class MatchResource:
       failure BIGINT DEFAULT 0
     );
     """
+
     def on_post(self, req, resp):
         doc = req.context['doc']
         today = datetime.date.today()
@@ -118,6 +123,7 @@ class MismatchDataResource:
       data json
     );
     """
+
     def on_post(self, req, resp):
         name = req.params['name']
         doc = req.context['doc']
@@ -152,16 +158,15 @@ class StreamedList(list):
         return 1
 
 
-
 class DataDownloadResource:
     """
     Big JSON document, with all your datas.
     """
+
     def on_get(self, req, resp):
         with req.context['connection'] as conn:
             match_cur = conn.cursor()
-            match_cur.execute("SELECT * from matches")
-            print "done first select"
+            match_cur.execute("SELECT * FROM matches")
 
             def date_match_record(record):
                 return record[0].isoformat(), {
@@ -170,8 +175,7 @@ class DataDownloadResource:
                 }
 
             failure_cur = conn.cursor()
-            failure_cur.execute("select * from failures")
-            print "done second select"
+            failure_cur.execute("SELECT * FROM failures")
             resp.content_type = 'application/json'
             req.context['result'] = {
                 'stats': StreamedDict(match_cur, date_match_record),
