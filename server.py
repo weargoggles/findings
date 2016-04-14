@@ -45,6 +45,17 @@ class JSONTranslator(object):
 
         resp.data = json.dumps(req.context['result'])
 
+class PostgresConnectionPool(object):
+
+    def process_request(self, req, resp):
+        req.context['connection'] = pool.getconn()
+
+    def process_response(self, req, resp, resource):
+        if 'connection' not in req.context:
+            return
+
+        pool.putconn(req.context['connection'])
+
 class MatchResource:
     """
     create table matches (
@@ -56,8 +67,7 @@ class MatchResource:
     def on_post(self, req, resp):
         doc = req.context['doc']
         today = datetime.date.today()
-        connection = pool.getconn()
-        with connection as conn:
+        with req.context['connection'] as conn:
             cur = conn.cursor()
             cur.execute("INSERT INTO matches (date, success, failure) "
                         "VALUES (%s, (%s = TRUE)::INTEGER, (%s = FALSE)::INTEGER) "
@@ -66,7 +76,6 @@ class MatchResource:
                         "failure = matches.failure + (%s = FALSE)::INTEGER "
                         "WHERE matches.date = %s",
                         [today, doc, doc, doc, doc, today])
-        pool.putconn(connection)
 
 
 class MismatchDataResource:
@@ -77,17 +86,35 @@ class MismatchDataResource:
     );
     """
     def on_post(self, req, resp):
+        name = req.params['name']
         doc = req.context['doc']
-        connection = pool.getconn()
-        with connection as conn:
+        with req.context['connection'] as conn:
             cur = conn.cursor()
-            cur.execute("INSERT INTO failures (data) VALUES (%s)", [Json(doc)])
+            cur.execute("INSERT INTO failures (name, data) VALUES (%s, %s)", [name, Json(doc)])
 
-        pool.putconn(connection)
+
+class DataDownloadResource:
+    """
+    Big JSON document, with all your datas.
+    """
+    def on_get(self, req, resp):
+        with req.context['connection'] as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT * from matches")
+            match_data = {
+                record[0].isoformat(): {
+                    'success': record[1],
+                    'failure': record[2],
+                }
+                for record in cur
+            }
+            resp.content_type = 'application/json'
+            req.context['result'] = match_data
 
 
 app = falcon.API(middleware=[
     JSONTranslator(),
+    PostgresConnectionPool(),
 ])
 
 match = MatchResource()
@@ -95,6 +122,7 @@ mismatch_data = MismatchDataResource()
 
 app.add_route('/match/', match)
 app.add_route('/mismatch-data/', mismatch_data)
+app.add_route('/get-match-data/', DataDownloadResource)
 
 if os.getenv('WSGI_AUTH_CREDENTIALS'):
     app = BasicAuth(app)
