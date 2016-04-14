@@ -45,7 +45,8 @@ class MatchResource:
         doc = req.context['doc']
         today = datetime.date.today()
         with pool.getconn() as conn:
-            conn.execute('WITH vars as (select ? as match)'
+            cur = conn.cursor()
+            cur.execute('WITH vars as (select ? as match)'
                          'INSERT INTO matches (date, success, failure) '
                          'VALUES (?, vars.match = true, vars.match = false) '
                          'ON CONFLICT (date) DO UPDATE SET '
