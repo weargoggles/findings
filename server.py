@@ -92,5 +92,5 @@ mismatch_data = MismatchDataResource()
 app.add_route('/match/', match)
 app.add_route('/mismatch-data/', mismatch_data)
 
-if os.environ('WSGI_AUTH_CREDENTIALS'):
+if os.getenv('WSGI_AUTH_CREDENTIALS'):
     app = BasicAuth(app)
