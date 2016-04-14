@@ -122,7 +122,7 @@ mismatch_data = MismatchDataResource()
 
 app.add_route('/match/', match)
 app.add_route('/mismatch-data/', mismatch_data)
-app.add_route('/get-match-data/', DataDownloadResource)
+app.add_route('/get-match-data/', DataDownloadResource())
 
 if os.getenv('WSGI_AUTH_CREDENTIALS'):
     app = BasicAuth(app)
