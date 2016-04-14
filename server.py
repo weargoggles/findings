@@ -54,7 +54,7 @@ class MatchResource:
         with pool.getconn() as conn:
             cur = conn.cursor()
             cur.execute("INSERT INTO matches (date, success, failure) "
-                        "VALUES (%s, %s = TRUE, %s = FALSE) "
+                        "VALUES (%s, (%s = TRUE)::INTEGER, (%s = FALSE)::INTEGER) "
                         "ON CONFLICT (date) DO UPDATE SET "
                         "success = success + (%s = TRUE)::INTEGER, "
                         "failure = failure + (%s = FALSE)::INTEGER",
