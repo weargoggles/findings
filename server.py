@@ -7,6 +7,7 @@ import psycopg2cffi.pool
 import dj_database_url
 from psycopg2cffi._impl.connection import Connection
 from wsgi_basic_auth import BasicAuth
+from psycopg2cffi.extras import Json
 
 database_config = dj_database_url.config()
 
@@ -79,7 +80,7 @@ class MismatchDataResource:
         doc = req.context['doc']
         with pool.getconn() as conn:
             cur = conn.cursor()
-            cur.execute("INSERT INTO failures (data) VALUES (%s)", [doc])
+            cur.execute("INSERT INTO failures (data) VALUES (%s)", [Json(doc)])
 
 
 app = falcon.API(middleware=[
