@@ -57,3 +57,7 @@ class MatchResource:
 app = falcon.API(middleware=[
     JSONTranslator(),
 ])
+
+match = MatchResource()
+
+app.add_route('/match/', match)
