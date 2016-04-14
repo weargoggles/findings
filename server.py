@@ -1,3 +1,4 @@
+import StringIO
 import datetime
 import falcon
 import json
@@ -35,9 +36,7 @@ _default_encoder = _default_encoder_class()
 def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
                 allow_nan=True, cls=None, indent=None, separators=None,
                 encoding='utf-8', default=None, sort_keys=False, **kw):
-    """Serialize ``obj`` and yield chunks.
-
-    """
+    """Serialize ``obj`` and yield chunks."""
     # cached encoder
     if (not skipkeys and ensure_ascii and
             check_circular and allow_nan and
@@ -55,6 +54,19 @@ def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     for chunk in iterable:
         yield chunk
 
+def buffered(iterable):
+    buffer = None
+    seen = 0
+    for chunk in iterable:
+        if buffer is None:
+            buffer = StringIO.StringIO()
+        buffer.write(chunk)
+        seen += len(chunk)
+        if seen > 4096:
+            buffer.seek(0)
+            yield buffer.read()
+            buffer = None
+            seen = 0
 
 class JSONTranslator(object):
     def process_request(self, req, resp):
@@ -79,7 +91,7 @@ class JSONTranslator(object):
     def process_response(self, req, resp, resource):
         if 'result' not in req.context:
             return
-        resp.stream = json_stream(req.context['result'])
+        resp.stream = buffered(json_stream(req.context['result']))
 
 
 class PostgresConnectionPool(object):
