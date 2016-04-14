@@ -59,7 +59,7 @@ class MatchResource:
                         "success = matches.success + (%s = TRUE)::INTEGER, "
                         "failure = matches.failure + (%s = FALSE)::INTEGER "
                         "WHERE matches.date = %s",
-                        [today, doc, doc, doc, doc, date])
+                        [today, doc, doc, doc, doc, today])
 
 
 app = falcon.API(middleware=[
