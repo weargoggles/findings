@@ -54,7 +54,7 @@ def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     for chunk in iterable:
         yield chunk
 
-def buffered(iterable):
+def buffered(iterable, buflen=32768):
     buffer = None
     seen = 0
     for chunk in iterable:
@@ -62,7 +62,7 @@ def buffered(iterable):
             buffer = StringIO.StringIO()
         buffer.write(chunk)
         seen += len(chunk)
-        if seen > 4096:
+        if seen > buflen:
             buffer.seek(0)
             yield buffer.read()
             buffer = None
