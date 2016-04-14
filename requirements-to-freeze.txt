@@ -1,2 +1,4 @@
 falcon
-psycopg2
+psycopg2cffi
+gunicorn
+dj_database_url
