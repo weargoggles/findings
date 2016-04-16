@@ -140,7 +140,7 @@ class MismatchDataResource:
     """
 
     def on_post(self, req, resp):
-        name = req.params['name']
+        name = req.params.get('name', 'unnamed')
         doc = req.context['doc']
         with req.context['connection'] as conn:
             cur = conn.cursor()
