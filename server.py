@@ -54,7 +54,7 @@ def json_stream(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     for chunk in iterable:
         yield chunk
 
-def buffered(iterable, buflen=32768):
+def buffered(iterable, buflen=4096):
     buffer = None
     seen = 0
     for chunk in iterable:
@@ -67,6 +67,8 @@ def buffered(iterable, buflen=32768):
             yield buffer.read()
             buffer = None
             seen = 0
+    if buffer:
+        yield buffer.read()
 
 class JSONTranslator(object):
     def process_request(self, req, resp):
