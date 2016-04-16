@@ -67,7 +67,8 @@ def buffered(iterable, buflen=4096):
             yield buffer.read()
             buffer = None
             seen = 0
-    if buffer:
+    if buffer is not None:
+        buffer.seek(0)
         yield buffer.read()
 
 class JSONTranslator(object):
